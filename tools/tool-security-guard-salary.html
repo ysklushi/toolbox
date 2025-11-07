@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- SEO 優化標籤 -->
+    <title>勞基法第84條之1保全人員工資結構剖析</title>
+    <meta name="description" content="一個互動式計算工具，用於剖析勞基法84-1條款下保全人員的薪資結構，可依不同最低工資標準與休假日數進行估算。由楊時綱律師製作。">
+    <meta name="keywords" content="保全, 薪資, 工資, 計算機, 勞基法84-1, 月薪, 最低工資, 工時, 楊時綱">
+    <meta name="author" content="楊時綱">
+
+    <style>
+        /* --- 整體風格與配色 --- */
+        :root {
+            --bg-color: #F5EFE6;
+            --text-color: #1D5B79;
+            --light-text-color: #4A7A8C;
+            --accent-color: #E8A87C;
+            --container-bg: #FFFDF9;
+            --border-color: #e0d8c8;
+            --toggle-bg-off: #ccc;
+            --toggle-bg-on: #4A7A8C;
+        }
+
+        html {
+            box-sizing: border-box;
+            font-size: 17px;
+        }
+
+        *, *:before, *:after {
+            box-sizing: inherit;
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Segoe UI', 'Helvetica Neue', 'Arial', 'Microsoft JhengHei', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.8;
+        }
+
+        /* --- 主要容器排版 --- */
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: var(--container-bg);
+            padding: 30px 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            border: 1px solid var(--border-color);
+        }
+
+        /* --- 標題與頁首 --- */
+        header {
+            margin-bottom: 20px;
+        }
+
+        header h1 {
+            color: var(--text-color);
+            text-align: center;
+            margin: 0;
+            font-size: 2.3em;
+            font-weight: 600;
+        }
+
+        .author-credit {
+            text-align: right;
+            font-size: 0.9em;
+            color: var(--light-text-color);
+            margin-bottom: 10px;
+        }
+
+        .author-credit a { color: inherit; text-decoration: none; }
+        .author-credit a:hover { text-decoration: underline; }
+
+        /* --- 計算機項目風格 --- */
+        .calculator-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 22px 0;
+            border-bottom: 1px solid var(--border-color);
+            flex-wrap: wrap;
+        }
+
+        .calculator-item:last-child {
+            border-bottom: none;
+        }
+
+        .label {
+            font-size: 1.2em;
+            font-weight: 500;
+            flex-grow: 1; 
+            margin-right: 20px;
+        }
+
+        .value-section {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            text-align: right;
+            flex-shrink: 0;
+        }
+        
+        /* --- 輸入框與滑桿 --- */
+        input[type="number"] {
+            font-size: 1em; padding: 10px; border: 1px solid var(--border-color);
+            border-radius: 6px; margin-left: 10px; text-align: right; width: 130px;
+        }
+
+        input[type="range"] { width: 160px; cursor: pointer; }
+        .slider-value { margin-left: 15px; font-weight: bold; font-size: 1.1em; width: 35px; }
+        
+        /* --- 最低工資切換鈕 --- */
+        .wage-toggle-container { display: flex; align-items: center; margin-right: 15px; }
+        .wage-toggle-label { font-size: 0.9em; color: var(--light-text-color); }
+        .toggle-switch { position: relative; display: inline-block; width: 50px; height: 28px; margin: 0 8px; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .toggle-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: var(--toggle-bg-off); transition: .4s; border-radius: 28px; }
+        .toggle-slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 4px;
+            background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .toggle-slider { background-color: var(--toggle-bg-on); }
+        input:checked + .toggle-slider:before { transform: translateX(22px); }
+
+        /* --- 計算結果與公式顯示 --- */
+        .result, .total-amount { font-size: 1.3em; font-weight: bold; color: var(--text-color); }
+        .total-amount { font-size: 1.9em; color: var(--accent-color); }
+        .formula { font-size: 0.9em; color: var(--light-text-color); margin-top: 8px; width: 100%; text-align: right; }
+        
+        /* --- 容器內的頁尾 (備註) --- */
+        .container-footer {
+            text-align: center;
+            font-size: 0.9em;
+            color: var(--light-text-color);
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+        }
+        .container-footer p {
+            margin: 0;
+        }
+
+        /* --- 頁面外的頁尾 (版權) --- */
+        .page-footer {
+            text-align: center;
+            margin-top: 30px;
+            color: var(--light-text-color);
+        }
+
+        .copyright {
+            margin: 0;
+            font-size: 0.85em;
+        }
+        
+        /* --- 響應式設計 --- */
+        @media (max-width: 650px) {
+            .container { padding: 20px; }
+            header h1 { font-size: 1.8em; }
+            .calculator-item { flex-direction: column; align-items: flex-start; }
+            .value-section { width: 100%; justify-content: flex-start; margin-top: 10px; }
+            .label { flex-basis: 100%; margin-right: 0; }
+            .formula { text-align: left; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>勞基法第84條之1保全人員工資結構剖析</h1>
+        </header>
+
+        <main>
+            <!-- 1. 最低工資設定 -->
+            <div class="calculator-item">
+                <span class="label" id="wageLabel">目前最低工資</span>
+                <div class="value-section">
+                    <div class="wage-toggle-container">
+                        <span class="wage-toggle-label">目前</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="wageToggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <span class="wage-toggle-label">115年</span>
+                    </div>
+                    NT$ <input type="number" id="minWageInput" value="28590">
+                </div>
+            </div>
+
+            <!-- 2. 月休/出勤日數 -->
+            <div class="calculator-item">
+                <span class="label" id="workDaysLabel">當月休6日，出勤24日</span>
+                <div class="value-section">
+                    休 <input type="range" id="restDaysSlider" min="6" max="12" value="6">
+                    <span class="slider-value" id="restDaysValue">6</span> 日
+                </div>
+            </div>
+
+            <!-- 3. 每月總工時 -->
+            <div class="calculator-item">
+                <span class="label" id="totalHoursFullLabel"></span>
+                <div class="value-section">
+                    <span class="result" id="totalHoursDisplay"></span>
+                </div>
+            </div>
+
+            <!-- 4. 正常工時工資 -->
+            <div class="calculator-item">
+                <span class="label" id="regularHoursLabel"></span>
+                <div class="value-section">
+                    <span class="result" id="regularWageDisplay"></span>
+                </div>
+                <div class="formula" id="regularWageFormula"></div>
+            </div>
+
+            <!-- 5. 延長工時工資 -->
+            <div class="calculator-item">
+                <span class="label" id="overtimeHoursLabel"></span>
+                <div class="value-section">
+                    <span class="result" id="overtimeWageDisplay"></span>
+                </div>
+                <div class="formula" id="overtimeWageFormula"></div>
+            </div>
+
+            <!-- 6. 月薪總額 -->
+            <div class="calculator-item">
+                <span class="label">保全人員月薪總額</span>
+                <div class="value-section">
+                    <span class="total-amount" id="totalSalaryDisplay"></span>
+                </div>
+                <div class="formula" id="totalSalaryFormula"></div>
+            </div>
+        </main>
+        
+        <!-- 備註文字的頁尾，放置於容器內部 -->
+        <footer class="container-footer">
+            <p>本計算結果僅供參考，實際薪資仍需以公司合約及勞動法規為準。</p>
+        </footer>
+    </div>
+
+    <!-- [已加回] 版權聲明的頁尾，放置於容器外部 -->
+    <footer class="page-footer">
+        <p class="copyright">&copy; 2025 楊時綱. All Rights Reserved.</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- 常數定義 ---
+            const WAGE_CURRENT = 28590;
+            const WAGE_NEXT_YEAR = 29500;
+
+            // --- 獲取所有 DOM 元素 ---
+            const minWageInput = document.getElementById('minWageInput');
+            const wageToggle = document.getElementById('wageToggle');
+            const wageLabel = document.getElementById('wageLabel');
+            const restDaysSlider = document.getElementById('restDaysSlider');
+            
+            const workDaysLabel = document.getElementById('workDaysLabel');
+            const restDaysValue = document.getElementById('restDaysValue');
+            
+            const totalHoursFullLabel = document.getElementById('totalHoursFullLabel');
+            const totalHoursDisplay = document.getElementById('totalHoursDisplay');
+            
+            const regularHoursLabel = document.getElementById('regularHoursLabel');
+            const regularWageDisplay = document.getElementById('regularWageDisplay');
+            const regularWageFormula = document.getElementById('regularWageFormula');
+
+            const overtimeHoursLabel = document.getElementById('overtimeHoursLabel');
+            const overtimeWageDisplay = document.getElementById('overtimeWageDisplay');
+            const overtimeWageFormula = document.getElementById('overtimeWageFormula');
+            
+            const totalSalaryDisplay = document.getElementById('totalSalaryDisplay');
+            const totalSalaryFormula = document.getElementById('totalSalaryFormula');
+
+            // --- 核心計算函數 ---
+            function calculateSalary() {
+                // 1. 獲取輸入值
+                const minWage = parseFloat(minWageInput.value) || 0;
+                const restDays = parseInt(restDaysSlider.value, 10);
+                
+                // 2. 計算衍伸變數
+                const workDays = 30 - restDays; 
+                const A_regularHours = workDays * 10;
+                const B_overtimeHours = workDays * 2;
+                const C_totalHours = A_regularHours + B_overtimeHours;
+                
+                // 3. 計算正常工時工資 (D)
+                const overtimeBeyond174 = A_regularHours - 174;
+                const D_regularWage = minWage + (minWage / 240 * overtimeBeyond174);
+
+                // 4. 計算延長工時工資 (E)
+                const E_overtimeWage = (minWage / 240) * (4 / 3) * B_overtimeHours;
+
+                // 5. 計算總薪資 (F)
+                const F_totalSalary = D_regularWage + E_overtimeWage;
+
+                // --- 將計算結果更新到畫面上 ---
+                updateUI({
+                    minWage, restDays, workDays,
+                    A_regularHours, B_overtimeHours, C_totalHours,
+                    overtimeBeyond174, D_regularWage, E_overtimeWage, F_totalSalary
+                });
+            }
+
+            // --- 更新畫面的專用函數 ---
+            function updateUI(data) {
+                wageLabel.textContent = wageToggle.checked ? '115年最低工資' : '目前最低工資';
+                workDaysLabel.textContent = `當月休 ${data.restDays} 日，出勤 ${data.workDays} 日`;
+                restDaysValue.textContent = data.restDays;
+                
+                totalHoursFullLabel.textContent = `當月正常工時 ${data.A_regularHours} 小時 + 當月延長工時 ${data.B_overtimeHours} 小時`;
+                totalHoursDisplay.textContent = `=${data.C_totalHours} 小時`;
+                
+                const formattedD = Math.round(data.D_regularWage).toLocaleString('zh-TW');
+                const formattedE = Math.round(data.E_overtimeWage).toLocaleString('zh-TW');
+
+                regularHoursLabel.textContent = `當月正常工時 ${data.A_regularHours} 小時的工資`;
+                regularWageDisplay.textContent = `NT$ ${formattedD}`;
+                regularWageFormula.textContent = `${data.minWage.toLocaleString('zh-TW')} + (${data.minWage.toLocaleString('zh-TW')} ÷ 240 × ${data.overtimeBeyond174}) = ${formattedD}`;
+                
+                overtimeHoursLabel.textContent = `當月延長工時 ${data.B_overtimeHours} 小時的工資`;
+                overtimeWageDisplay.textContent = `NT$ ${formattedE}`;
+                overtimeWageFormula.textContent = `${data.minWage.toLocaleString('zh-TW')} ÷ 240 × (4/3) × ${data.B_overtimeHours} = ${formattedE}`;
+                
+                const formattedF = Math.ceil(data.F_totalSalary).toLocaleString('zh-TW');
+                
+                totalSalaryDisplay.textContent = `NT$ ${formattedF}`;
+                totalSalaryFormula.textContent = `正常工時工資 ${formattedD} 元 + 延長工時工資 ${formattedE} 元 = ${formattedF} 元`;
+            }
+            
+            // --- 事件處理函數 ---
+            function handleToggleChange() {
+                minWageInput.value = this.checked ? WAGE_NEXT_YEAR : WAGE_CURRENT;
+                calculateSalary();
+            }
+
+            function handleManualInputChange() {
+                const currentValue = parseFloat(minWageInput.value);
+                if (currentValue === WAGE_NEXT_YEAR) {
+                    wageToggle.checked = true;
+                } else if (currentValue === WAGE_CURRENT) {
+                    wageToggle.checked = false;
+                }
+                calculateSalary();
+            }
+
+            // --- 綁定事件監聽器 ---
+            wageToggle.addEventListener('change', handleToggleChange);
+            minWageInput.addEventListener('input', handleManualInputChange);
+            restDaysSlider.addEventListener('input', calculateSalary);
+
+            // --- 頁面載入時，立即執行一次計算以顯示預設值 ---
+            calculateSalary();
+        });
+    </script>
+</body>
+</html>
