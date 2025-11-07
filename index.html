@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>楊時綱律師法律工具箱</title>
+    <meta name="description" content="由楊時綱律師製作的線上法律與實用計算工具集合。">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="app-layout">
+        <!-- 左側導覽列 -->
+        <nav class="sidebar">
+            <header class="sidebar-header">
+                <h2>法律工具箱</h2>
+                <div class="author-credit">
+                    <a href="https://karolushi.netlify.app/" target="_blank" rel="noopener noreferrer">楊時綱律師</a> 製作
+                </div>
+            </header>
+            <ul class="sidebar-nav">
+                <li>
+                    <a href="./tools/tool-security-guard-salary.html" target="tool-frame" class="active">
+                        保全人員薪資結構計算
+                    </a>
+                </li>
+                <li>
+                    <a href="./tools/tool-placeholder-1.html" target="tool-frame">
+                        （小工具研發中）
+                    </a>
+                </li>
+                <li>
+                    <a href="./tools/tool-placeholder-2.html" target="tool-frame">
+                        （小工具研發中）
+                    </a>
+                </li>
+                <!-- 未來新增的工具請加在這裡 -->
+            </ul>
+            <!-- [已移除] 原本位於此處的 sidebar-footer -->
+        </nav>
+
+        <!-- 右側內容顯示區 -->
+        <main class="content-pane">
+            <iframe name="tool-frame" id="tool-frame" src="./tools/tool-security-guard-salary.html" frameborder="0"></iframe>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const navLinks = document.querySelectorAll('.sidebar-nav a');
+
+            navLinks.forEach(link => {
+                link.addEventListener('click', () => {
+                    // 移除所有連結的 active class
+                    navLinks.forEach(navLink => navLink.classList.remove('active'));
+                    // 為被點擊的連結加上 active class
+                    link.classList.add('active');
+                });
+            });
+        });
+    </script>
+
+</body>
+</html>

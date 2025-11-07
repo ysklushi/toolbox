@@ -1,0 +1,136 @@
+/* --- Google Fonts (可選，但能提升質感) --- */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap');
+
+/* --- 整體風格與變數 --- */
+:root {
+    --bg-color: #F5EFE6;
+    --sidebar-bg: #E8DFCA;
+    --content-bg: #FFFDF9;
+    --text-color: #1D5B79;
+    --light-text-color: #4A7A8C;
+    --accent-color: #E8A87C;
+    --border-color: #e0d8c8;
+    --hover-bg: #F5EFE6;
+}
+
+html {
+    box-sizing: border-box;
+    font-size: 16px;
+}
+
+*, *:before, *:after {
+    box-sizing: inherit;
+}
+
+body {
+    margin: 0;
+    font-family: 'Noto Sans TC', 'Segoe UI', 'Helvetica Neue', 'Arial', 'Microsoft JhengHei', sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    line-height: 1.6;
+}
+
+/* --- 主應用程式佈局 (使用 Flexbox) --- */
+.app-layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* --- 左側導覽列 --- */
+.sidebar {
+    flex: 0 0 260px; /* 不擴展、不收縮、基礎寬度 260px */
+    background-color: var(--sidebar-bg);
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--border-color);
+}
+
+.sidebar-header {
+    padding: 25px;
+    border-bottom: 1px solid var(--border-color);
+    /* [修改 1] 移除此處的 text-align: center; */
+}
+
+.sidebar-header h2 {
+    margin: 0 0 5px 0;
+    font-size: 1.8em;
+    color: var(--text-color);
+}
+
+.author-credit {
+    font-size: 0.9em;
+    color: var(--light-text-color);
+}
+.author-credit a {
+    color: inherit;
+    text-decoration: none;
+    font-weight: 500;
+}
+.author-credit a:hover {
+    text-decoration: underline;
+}
+
+.sidebar-nav {
+    list-style: none;
+    padding: 15px 0;
+    margin: 0;
+    flex-grow: 1; /* 佔滿剩餘空間，將 footer 推至底部 */
+}
+
+.sidebar-nav a {
+    display: block;
+    padding: 15px 25px;
+    color: var(--light-text-color);
+    text-decoration: none;
+    font-size: 1.1em;
+    font-weight: 500;
+    transition: background-color 0.2s, color 0.2s;
+    border-left: 4px solid transparent;
+}
+
+.sidebar-nav a:hover {
+    background-color: var(--hover-bg);
+    color: var(--text-color);
+}
+
+.sidebar-nav a.active {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    border-left-color: var(--accent-color);
+}
+
+.sidebar-footer {
+    padding: 20px 25px;
+    font-size: 0.8em;
+    color: var(--light-text-color);
+    text-align: center;
+}
+
+/* --- 右側內容顯示區 --- */
+.content-pane {
+    flex-grow: 1; /* 佔滿所有剩餘寬度 */
+    display: flex;
+}
+
+#tool-frame {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+/* --- 響應式設計 (RWD) --- */
+@media (max-width: 768px) {
+    .app-layout {
+        flex-direction: column; /* 垂直堆疊 */
+    }
+
+    .sidebar {
+        flex: 0 0 auto; /* 寬度由內容決定 */
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .content-pane {
+        height: calc(100vh - 230px); /* 減去 sidebar 的高度，可微調 */
+    }
+}
