@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>附件：爭點整理表格產生器</title>
+    <!-- 引入 Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- 引入 Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <!-- 引入 html2pdf.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+    <style>
+        /* 基礎設定 */
+        * { box-sizing: border-box; }
+        body {
+            background-color: #525659;
+            padding: 20px;
+            font-family: "Microsoft JhengHei", "Heiti TC", sans-serif;
+        }
+
+        /* --- PDF 預覽區 --- */
+        #pdf-preview-container {
+            background: white;
+            width: 210mm; 
+            min-height: 297mm;
+            /* 邊距調整：左右縮減至 8mm 以達極限寬度，上下保持 15mm */
+            padding: 15mm 8mm; 
+            margin: 0 auto;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            color: black;
+            position: relative;
+        }
+
+        /* --- 表格樣式 --- */
+        .legal-table {
+            width: 100%;
+            border-collapse: collapse;
+            /* 確保表格內所有文字都是 12pt */
+            font-size: 12pt; 
+            table-layout: fixed;
+            border: 2px solid black;
+        }
+
+        .legal-table th, .legal-table td {
+            border: 1px solid black;
+            padding: 6px; /* 稍微縮小內距以節省空間 */
+            vertical-align: top;
+            /* 字體大小再次強制確認 */
+            font-size: 12pt;
+            
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            word-break: break-all;
+        }
+
+        tr {
+            page-break-inside: auto;
+            page-break-after: auto;
+        }
+        
+        thead tr {
+            page-break-inside: avoid;
+        }
+
+        /* 欄位寬度調整 */
+        /* 項目欄稍微縮小一點點以讓出空間給內容 */
+        .col-header { width: 12%; text-align: center; font-weight: bold; vertical-align: middle; }
+        /* 內容欄均分剩餘空間 */
+        .col-content { width: 14.6%; }
+
+        .center-align { text-align: center; vertical-align: middle; }
+        
+        .left-align { 
+            text-align: left; 
+            vertical-align: top;
+            padding: 8px;
+        }
+
+        .party-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+            text-align: center;
+            min-height: 1.5em;
+            font-size: 12pt; /* 確保稱謂也是 12pt */
+        }
+
+        /* 文件標題 */
+        .doc-title { 
+            font-size: 16pt; /* 標題通常比內文大，若需改12pt請通知，目前維持16pt醒目 */
+            font-weight: bold; 
+            margin-bottom: 15px; 
+        }
+
+        /* --- 輸入區樣式 --- */
+        .input-panel {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            height: calc(100vh - 40px);
+            overflow-y: auto;
+            position: sticky;
+            top: 20px;
+        }
+        
+        .issue-block {
+            border-left: 5px solid #0d6efd;
+            background-color: #f8f9fa;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+
+        .section-title {
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        .char-counter {
+            font-size: 0.8rem;
+            color: #6c757d;
+            text-align: right;
+            margin-top: 2px;
+        }
+        
+        .char-counter.limit-reached {
+            color: #dc3545;
+            font-weight: bold;
+        }
+
+        /* 勾選區 */
+        .checkbox-group {
+            background-color: #f1f3f5;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        .form-check-inline {
+            margin-right: 0.5rem;
+            margin-bottom: 0.25rem;
+        }
+        .form-check-label {
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white; padding: 0; }
+            #pdf-preview-container { margin: 0; padding: 0; width: 100%; box-shadow: none; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container-fluid">
+    <div class="row">
+        <!-- 左側：資料輸入區 -->
+        <div class="col-md-4 no-print">
+            <div class="input-panel">
+                <h4 class="mb-4 text-primary"><i class="bi bi-pencil-square"></i> 爭點整理表格製作工具</h4>
+                
+                <!-- 0. 標題設定 -->
+                <div class="mb-4">
+                    <div class="section-title">0. 表格標題設定</div>
+                    <input type="text" class="form-control" id="input_doc_title" value="附件：爭點整理表格">
+                    <div class="form-text text-muted">可修改上方標題文字</div>
+                </div>
+
+                <!-- 1. 當事人設定 -->
+                <div class="mb-4">
+                    <div class="section-title">1. 當事人稱謂與姓名</div>
+                    
+                    <label class="fw-bold mb-1 text-primary">左欄設定</label>
+                    <div class="checkbox-group" id="left-title-options"></div>
+                    <div class="mb-3">
+                        <input type="text" class="form-control" id="input_plaintiff" maxlength="150" placeholder="輸入姓名 (例如：王小明)">
+                        <div class="char-counter" id="cnt_plaintiff">限制：0/150字</div>
+                    </div>
+
+                    <hr>
+
+                    <label class="fw-bold mb-1 text-danger">右欄設定</label>
+                    <div class="checkbox-group" id="right-title-options"></div>
+                    <div class="mb-2">
+                        <input type="text" class="form-control" id="input_defendant" maxlength="150" placeholder="輸入姓名 (例如：陳大華)">
+                        <div class="char-counter" id="cnt_defendant">限制：0/150字</div>
+                    </div>
+                </div>
+
+                <!-- 2. 聲明 -->
+                <div class="mb-4">
+                    <div class="section-title">2. 聲明事項</div>
+                    <div class="mb-2">
+                        <label>左方聲明</label>
+                        <textarea class="form-control" id="input_decl_plaintiff" rows="4">1. 上訴駁回&#10;2. 訴訟費用由上訴人負擔</textarea>
+                    </div>
+                    <div class="mb-2">
+                        <label>右方聲明</label>
+                        <textarea class="form-control" id="input_decl_defendant" rows="4">1. 原判決廢棄&#10;2.</textarea>
+                    </div>
+                </div>
+
+                <!-- 3. 爭點 -->
+                <div id="issues-container"></div>
+
+                <div class="d-grid gap-2 pt-3 border-top">
+                    <button class="btn btn-outline-primary" onclick="addNewIssue()">
+                        <i class="bi bi-plus-circle"></i> 增加新爭點
+                    </button>
+                    <button class="btn btn-success btn-lg mt-2" onclick="generatePDF()">
+                        <i class="bi bi-download"></i> 下載 PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右側：PDF 預覽區 -->
+        <div class="col-md-8 d-flex justify-content-center">
+            <div>
+                <div id="pdf-preview-container">
+                    <!-- 標題可編輯 -->
+                    <div class="doc-title" id="out_doc_title">附件：爭點整理表格</div>
+                    <!-- 原本的 doc-note 已移除 -->
+                    
+                    <table class="legal-table">
+                        <thead>
+                            <!-- 第一列：當事人 -->
+                            <tr>
+                                <td class="col-header">項目</td>
+                                <td colspan="3" class="left-align">
+                                    <div class="party-title" id="out_title_left">被上訴人 （即原審原告）</div>
+                                    <span id="out_plaintiff"></span>
+                                </td>
+                                <td colspan="3" class="left-align">
+                                    <div class="party-title" id="out_title_right">上訴人 （即原審被告）</div>
+                                    <span id="out_defendant"></span>
+                                </td>
+                            </tr>
+                            
+                            <!-- 第二列：聲明 -->
+                            <tr>
+                                <td class="col-header">聲明</td>
+                                <td colspan="3" id="out_decl_plaintiff"></td>
+                                <td colspan="3" id="out_decl_defendant"></td>
+                            </tr>
+
+                            <!-- 第三列：標題 -->
+                            <tr style="background-color: #f2f2f2;">
+                                <td class="col-header">陳述<br>及<br>證據</td>
+                                <td class="col-content center-align"><b>主張<br>原因事實</b></td>
+                                <td class="col-content center-align"><b>法律依據</b></td>
+                                <td class="col-content center-align"><b>證據</b></td>
+                                <td class="col-content center-align"><b>答辯<br>原因事實</b></td>
+                                <td class="col-content center-align"><b>法律依據</b></td>
+                                <td class="col-content center-align"><b>證據</b></td>
+                            </tr>
+                        </thead>
+                        
+                        <tbody id="table-issues-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let issueCount = 0;
+    const chineseNumbers = ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十', '十一', '十二', '十三', '十四', '十五'];
+    const titleOptions = ['原告', '被告', '上訴人', '被上訴人', '（即原審原告）', '（即原審被告）'];
+
+    window.onload = function() {
+        initTitleCheckboxes();
+        addNewIssue();
+        bindStaticInputs();
+    };
+
+    function initTitleCheckboxes() {
+        createCheckboxes('left-title-options', 'chk-left', 'out_title_left', ['被上訴人', '（即原審原告）']);
+        createCheckboxes('right-title-options', 'chk-right', 'out_title_right', ['上訴人', '（即原審被告）']);
+    }
+
+    function createCheckboxes(containerId, className, outputId, defaultChecks) {
+        const container = document.getElementById(containerId);
+        
+        titleOptions.forEach((opt, index) => {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'form-check form-check-inline';
+            
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.className = `form-check-input ${className}`;
+            checkbox.id = `${className}_${index}`;
+            checkbox.value = opt;
+            
+            if (defaultChecks.includes(opt)) {
+                checkbox.checked = true;
+            }
+
+            const label = document.createElement('label');
+            label.className = 'form-check-label';
+            label.htmlFor = checkbox.id;
+            label.innerText = opt;
+
+            checkbox.addEventListener('change', () => updateTitle(className, outputId));
+
+            wrapper.appendChild(checkbox);
+            wrapper.appendChild(label);
+            container.appendChild(wrapper);
+        });
+        updateTitle(className, outputId);
+    }
+
+    function updateTitle(className, outputId) {
+        const checkedBoxes = document.querySelectorAll(`.${className}:checked`);
+        const values = Array.from(checkedBoxes).map(cb => cb.value);
+        document.getElementById(outputId).innerText = values.join(' ');
+    }
+
+    function bindStaticInputs() {
+        // 綁定標題
+        bindInputSimple('input_doc_title', 'out_doc_title');
+
+        // 綁定當事人與聲明
+        bindInputWithLimit('input_plaintiff', 'out_plaintiff', 'cnt_plaintiff');
+        bindInputWithLimit('input_defendant', 'out_defendant', 'cnt_defendant');
+        bindInputSimple('input_decl_plaintiff', 'out_decl_plaintiff');
+        bindInputSimple('input_decl_defendant', 'out_decl_defendant');
+    }
+
+    function bindInputSimple(inputId, outId) {
+        const input = document.getElementById(inputId);
+        const output = document.getElementById(outId);
+        if(input && output) {
+            output.innerText = input.value;
+            input.addEventListener('input', (e) => {
+                output.innerText = e.target.value;
+            });
+        }
+    }
+
+    function bindInputWithLimit(inputId, outId, counterId) {
+        const input = document.getElementById(inputId);
+        const output = document.getElementById(outId);
+        const counter = document.getElementById(counterId);
+
+        if(input && output) {
+            output.innerText = input.value;
+            updateCounter(input, counter);
+            input.addEventListener('input', (e) => {
+                output.innerText = e.target.value;
+                updateCounter(e.target, counter);
+            });
+        }
+    }
+
+    function updateCounter(inputElement, counterElement) {
+        if (!counterElement) return;
+        const currentLength = inputElement.value.length;
+        const limit = 150;
+        counterElement.innerText = `限制：${currentLength}/${limit}字`;
+        
+        if (currentLength >= limit) {
+            counterElement.classList.add('limit-reached');
+        } else {
+            counterElement.classList.remove('limit-reached');
+        }
+    }
+
+    function addNewIssue() {
+        issueCount++;
+        const currentNum = issueCount;
+        const chinNum = getChineseNumber(currentNum);
+
+        const container = document.getElementById('issues-container');
+        const issueDiv = document.createElement('div');
+        issueDiv.className = 'issue-block';
+        
+        const fields = [
+            { id: `p_fact_${currentNum}`, label: '主張/原因事實', col: '12' },
+            { id: `p_law_${currentNum}`, label: '法律依據', col: '6' },
+            { id: `p_evid_${currentNum}`, label: '證據', col: '6' },
+            { id: `d_fact_${currentNum}`, label: '答辯/原因事實', col: '12', isRight: true },
+            { id: `d_law_${currentNum}`, label: '法律依據', col: '6', isRight: true },
+            { id: `d_evid_${currentNum}`, label: '證據', col: '6', isRight: true },
+        ];
+
+        let html = `<h5 class="fw-bold mb-3">爭點${chinNum}</h5><div class="row g-2">`;
+        html += `<div class="col-12 text-primary fw-bold">左欄內容</div>`;
+        
+        fields.forEach((f, index) => {
+            if (index === 3) {
+                 html += `<div class="col-12 text-danger fw-bold mt-3 border-top pt-2">右欄內容</div>`;
+            }
+            html += `
+                <div class="col-md-${f.col}">
+                    <textarea class="form-control" id="${f.id}" rows="${f.col === '12' ? 3 : 2}" maxlength="150" placeholder="${f.label}"></textarea>
+                    <div class="char-counter" id="cnt_${f.id}">限制：0/150字</div>
+                </div>
+            `;
+        });
+        html += `</div>`;
+        issueDiv.innerHTML = html;
+        container.appendChild(issueDiv);
+
+        const tbody = document.getElementById('table-issues-body');
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td class="col-header center-align">爭點<br>${chinNum}：</td>
+            <td id="out_p_fact_${currentNum}"></td>
+            <td id="out_p_law_${currentNum}"></td>
+            <td id="out_p_evid_${currentNum}"></td>
+            <td id="out_d_fact_${currentNum}"></td>
+            <td id="out_d_law_${currentNum}"></td>
+            <td id="out_d_evid_${currentNum}"></td>
+        `;
+        tbody.appendChild(tr);
+
+        fields.forEach(f => {
+            bindInputWithLimit(f.id, `out_${f.id}`, `cnt_${f.id}`);
+        });
+
+        setTimeout(() => issueDiv.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+    }
+
+    function getChineseNumber(num) {
+        if(num < chineseNumbers.length) return chineseNumbers[num];
+        return num.toString();
+    }
+
+    function generatePDF() {
+        const element = document.getElementById('pdf-preview-container');
+        const opt = {
+            margin:       0, // 使用 CSS padding
+            filename:     '爭點整理表格.pdf',
+            image:        { type: 'jpeg', quality: 1 },
+            html2canvas:  { scale: 2, useCORS: true, scrollY: 0 },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+            pagebreak:    { mode: ['css', 'legacy'] } 
+        };
+        html2pdf().set(opt).from(element).save();
+    }
+</script>
+
+</body>
+</html>
