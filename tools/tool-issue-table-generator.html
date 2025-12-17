@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>附件：爭點整理表格產生器</title>
+    <title>附件：爭點整理表格產生器 (標題緊湊修正版)</title>
     <!-- 引入 Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- 引入 Bootstrap Icons -->
@@ -14,8 +14,9 @@
     <style>
         /* 基礎設定 */
         * { box-sizing: border-box; }
+        
         body {
-            background-color: #525659;
+            background-color: #f5f2eb;
             padding: 20px;
             font-family: "Microsoft JhengHei", "Heiti TC", sans-serif;
         }
@@ -25,10 +26,9 @@
             background: white;
             width: 210mm; 
             min-height: 297mm;
-            /* 邊距調整：左右縮減至 8mm 以達極限寬度，上下保持 15mm */
             padding: 15mm 8mm; 
             margin: 0 auto;
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
             color: black;
             position: relative;
         }
@@ -37,7 +37,6 @@
         .legal-table {
             width: 100%;
             border-collapse: collapse;
-            /* 確保表格內所有文字都是 12pt */
             font-size: 12pt; 
             table-layout: fixed;
             border: 2px solid black;
@@ -45,15 +44,21 @@
 
         .legal-table th, .legal-table td {
             border: 1px solid black;
-            padding: 6px; /* 稍微縮小內距以節省空間 */
+            padding: 4px; 
             vertical-align: top;
-            /* 字體大小再次強制確認 */
             font-size: 12pt;
-            
             white-space: pre-wrap;
             word-wrap: break-word;
             overflow-wrap: break-word;
             word-break: break-all;
+        }
+
+        /* --- 重點修正：當事人列的極限壓縮 --- */
+        .compact-row td {
+            /* 將上方內距設為 0，讓內容貼頂 */
+            padding-top: 0px !important;    
+            padding-bottom: 2px !important;
+            vertical-align: top;
         }
 
         tr {
@@ -65,31 +70,43 @@
             page-break-inside: avoid;
         }
 
-        /* 欄位寬度調整 */
-        /* 項目欄稍微縮小一點點以讓出空間給內容 */
+        /* 欄位寬度 */
         .col-header { width: 12%; text-align: center; font-weight: bold; vertical-align: middle; }
-        /* 內容欄均分剩餘空間 */
         .col-content { width: 14.6%; }
 
         .center-align { text-align: center; vertical-align: middle; }
         
         .left-align { 
-            text-align: left; 
+            text-align: left;
             vertical-align: top;
-            padding: 8px;
+            /* 這裡的 padding 會被 .compact-row td 覆蓋 */
         }
 
+        /* --- 重點修正：稱謂標題樣式 --- */
         .party-title {
             font-weight: bold;
-            margin-bottom: 5px;
-            text-align: center;
-            min-height: 1.5em;
-            font-size: 12pt; /* 確保稱謂也是 12pt */
+            margin-bottom: 0px; 
+            /* 關鍵：使用負邊距將文字往上拉，消除字體上方留白 */
+            margin-top: -3px;     
+            text-align: center; 
+            font-size: 12pt;
+            /* 緊湊行高 */
+            line-height: 1.2; 
+            /* 確保這是一個區塊元素 */
+            display: block;
         }
 
-        /* 文件標題 */
+        .party-name-content {
+            text-align: left;
+            padding-left: 2px;
+            display: block;
+            width: 100%;
+            margin: 0; 
+            line-height: 1.15; 
+        }
+
         .doc-title { 
-            font-size: 16pt; /* 標題通常比內文大，若需改12pt請通知，目前維持16pt醒目 */
+            font-size: 16pt; 
             font-weight: bold; 
             margin-bottom: 15px; 
         }
@@ -99,7 +116,7 @@
             background: white;
             padding: 20px;
             border-radius: 8px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
             height: calc(100vh - 40px);
             overflow-y: auto;
             position: sticky;
@@ -112,6 +129,7 @@
             padding: 15px;
             margin-bottom: 20px;
             border-radius: 4px;
+            transition: all 0.3s ease;
         }
 
         .section-title {
@@ -150,6 +168,27 @@
             cursor: pointer;
         }
 
+        /* 垃圾桶按鈕 */
+        .btn-trash {
+            color: #dc3545;
+            border-color: #dc3545;
+            background: white;
+            padding: 4px 10px;
+        }
+        .btn-trash:hover {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        /* 版權宣告 */
+        .copyright-text {
+            text-align: center;
+            color: #adb5bd;
+            font-size: 0.8rem;
+            margin-top: 15px;
+            font-family: Arial, sans-serif;
+        }
+
         @media print {
             .no-print { display: none !important; }
             body { background: white; padding: 0; }
@@ -164,7 +203,7 @@
         <!-- 左側：資料輸入區 -->
         <div class="col-md-4 no-print">
             <div class="input-panel">
-                <h4 class="mb-4 text-primary"><i class="bi bi-pencil-square"></i> 爭點整理表格製作工具</h4>
+                <h4 class="mb-4 text-primary"><i class="bi bi-pencil-square"></i> 爭點整理表格小工具</h4>
                 
                 <!-- 0. 標題設定 -->
                 <div class="mb-4">
@@ -180,7 +219,7 @@
                     <label class="fw-bold mb-1 text-primary">左欄設定</label>
                     <div class="checkbox-group" id="left-title-options"></div>
                     <div class="mb-3">
-                        <input type="text" class="form-control" id="input_plaintiff" maxlength="150" placeholder="輸入姓名 (例如：王小明)">
+                        <textarea class="form-control" id="input_plaintiff" rows="3" maxlength="150" placeholder="輸入姓名 (例如：某某公司&#10;法定代理人：王小明)"></textarea>
                         <div class="char-counter" id="cnt_plaintiff">限制：0/150字</div>
                     </div>
 
@@ -189,7 +228,7 @@
                     <label class="fw-bold mb-1 text-danger">右欄設定</label>
                     <div class="checkbox-group" id="right-title-options"></div>
                     <div class="mb-2">
-                        <input type="text" class="form-control" id="input_defendant" maxlength="150" placeholder="輸入姓名 (例如：陳大華)">
+                        <textarea class="form-control" id="input_defendant" rows="3" maxlength="150" placeholder="輸入姓名 (例如：陳大華)"></textarea>
                         <div class="char-counter" id="cnt_defendant">限制：0/150字</div>
                     </div>
                 </div>
@@ -211,12 +250,18 @@
                 <div id="issues-container"></div>
 
                 <div class="d-grid gap-2 pt-3 border-top">
-                    <button class="btn btn-outline-primary" onclick="addNewIssue()">
+                    <!-- 增加爭點按鈕 -->
+                    <button class="btn btn-outline-primary" onclick="addNewIssue(true)">
                         <i class="bi bi-plus-circle"></i> 增加新爭點
                     </button>
+                    <!-- 下載按鈕 -->
                     <button class="btn btn-success btn-lg mt-2" onclick="generatePDF()">
                         <i class="bi bi-download"></i> 下載 PDF
                     </button>
+                    <!-- 版權宣告 -->
+                    <div class="copyright-text">
+                        &copy; 2025 楊時綱. All Rights Reserved.
+                    </div>
                 </div>
             </div>
         </div>
@@ -225,22 +270,20 @@
         <div class="col-md-8 d-flex justify-content-center">
             <div>
                 <div id="pdf-preview-container">
-                    <!-- 標題可編輯 -->
                     <div class="doc-title" id="out_doc_title">附件：爭點整理表格</div>
-                    <!-- 原本的 doc-note 已移除 -->
                     
                     <table class="legal-table">
                         <thead>
-                            <!-- 第一列：當事人 -->
-                            <tr>
+                            <!-- 第一列：當事人 (加入 compact-row 類別進行高度壓縮) -->
+                            <tr class="compact-row">
                                 <td class="col-header">項目</td>
                                 <td colspan="3" class="left-align">
                                     <div class="party-title" id="out_title_left">被上訴人 （即原審原告）</div>
-                                    <span id="out_plaintiff"></span>
+                                    <div class="party-name-content" id="out_plaintiff"></div>
                                 </td>
                                 <td colspan="3" class="left-align">
                                     <div class="party-title" id="out_title_right">上訴人 （即原審被告）</div>
-                                    <span id="out_defendant"></span>
+                                    <div class="party-name-content" id="out_defendant"></div>
                                 </td>
                             </tr>
                             
@@ -272,13 +315,13 @@
 </div>
 
 <script>
-    let issueCount = 0;
+    let uniqueIdCounter = 0;
     const chineseNumbers = ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十', '十一', '十二', '十三', '十四', '十五'];
     const titleOptions = ['原告', '被告', '上訴人', '被上訴人', '（即原審原告）', '（即原審被告）'];
 
     window.onload = function() {
         initTitleCheckboxes();
-        addNewIssue();
+        addNewIssue(false); // 預設加入爭點一
         bindStaticInputs();
     };
 
@@ -325,10 +368,7 @@
     }
 
     function bindStaticInputs() {
-        // 綁定標題
         bindInputSimple('input_doc_title', 'out_doc_title');
-
-        // 綁定當事人與聲明
         bindInputWithLimit('input_plaintiff', 'out_plaintiff', 'cnt_plaintiff');
         bindInputWithLimit('input_defendant', 'out_defendant', 'cnt_defendant');
         bindInputSimple('input_decl_plaintiff', 'out_decl_plaintiff');
@@ -374,25 +414,41 @@
         }
     }
 
-    function addNewIssue() {
-        issueCount++;
-        const currentNum = issueCount;
-        const chinNum = getChineseNumber(currentNum);
-
+    function addNewIssue(isRemovable = true) {
+        uniqueIdCounter++;
+        const currentId = uniqueIdCounter;
+        
+        // 左側輸入區塊
         const container = document.getElementById('issues-container');
         const issueDiv = document.createElement('div');
         issueDiv.className = 'issue-block';
+        issueDiv.id = `issue-block-${currentId}`;
+
+        // 標題與刪除按鈕
+        let headerHtml = `
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0 issue-label-text">爭點</h5>
+        `;
+        
+        if (isRemovable) {
+            headerHtml += `
+                <button class="btn btn-outline-danger btn-sm btn-trash" onclick="removeIssue(${currentId})" title="刪除此爭點">
+                    <i class="bi bi-trash"></i>
+                </button>
+            `;
+        }
+        headerHtml += `</div>`;
         
         const fields = [
-            { id: `p_fact_${currentNum}`, label: '主張/原因事實', col: '12' },
-            { id: `p_law_${currentNum}`, label: '法律依據', col: '6' },
-            { id: `p_evid_${currentNum}`, label: '證據', col: '6' },
-            { id: `d_fact_${currentNum}`, label: '答辯/原因事實', col: '12', isRight: true },
-            { id: `d_law_${currentNum}`, label: '法律依據', col: '6', isRight: true },
-            { id: `d_evid_${currentNum}`, label: '證據', col: '6', isRight: true },
+            { id: `p_fact_${currentId}`, label: '主張/原因事實', col: '12' },
+            { id: `p_law_${currentId}`, label: '法律依據', col: '6' },
+            { id: `p_evid_${currentId}`, label: '證據', col: '6' },
+            { id: `d_fact_${currentId}`, label: '答辯/原因事實', col: '12', isRight: true },
+            { id: `d_law_${currentId}`, label: '法律依據', col: '6', isRight: true },
+            { id: `d_evid_${currentId}`, label: '證據', col: '6', isRight: true },
         ];
 
-        let html = `<h5 class="fw-bold mb-3">爭點${chinNum}</h5><div class="row g-2">`;
+        let html = headerHtml + `<div class="row g-2">`;
         html += `<div class="col-12 text-primary fw-bold">左欄內容</div>`;
         
         fields.forEach((f, index) => {
@@ -410,16 +466,19 @@
         issueDiv.innerHTML = html;
         container.appendChild(issueDiv);
 
+        // 右側表格列
         const tbody = document.getElementById('table-issues-body');
         const tr = document.createElement('tr');
+        tr.id = `issue-row-${currentId}`; 
+        
         tr.innerHTML = `
-            <td class="col-header center-align">爭點<br>${chinNum}：</td>
-            <td id="out_p_fact_${currentNum}"></td>
-            <td id="out_p_law_${currentNum}"></td>
-            <td id="out_p_evid_${currentNum}"></td>
-            <td id="out_d_fact_${currentNum}"></td>
-            <td id="out_d_law_${currentNum}"></td>
-            <td id="out_d_evid_${currentNum}"></td>
+            <td class="col-header center-align issue-table-label">爭點<br>：</td>
+            <td id="out_p_fact_${currentId}"></td>
+            <td id="out_p_law_${currentId}"></td>
+            <td id="out_p_evid_${currentId}"></td>
+            <td id="out_d_fact_${currentId}"></td>
+            <td id="out_d_law_${currentId}"></td>
+            <td id="out_d_evid_${currentId}"></td>
         `;
         tbody.appendChild(tr);
 
@@ -427,7 +486,40 @@
             bindInputWithLimit(f.id, `out_${f.id}`, `cnt_${f.id}`);
         });
 
-        setTimeout(() => issueDiv.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+        renumberIssues();
+        
+        if (isRemovable) {
+            setTimeout(() => issueDiv.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+        }
+    }
+
+    function removeIssue(id) {
+        if (!confirm('確定要刪除這個爭點嗎？此動作無法復原。')) return;
+
+        const block = document.getElementById(`issue-block-${id}`);
+        if (block) block.remove();
+
+        const row = document.getElementById(`issue-row-${id}`);
+        if (row) row.remove();
+
+        renumberIssues();
+    }
+
+    function renumberIssues() {
+        const inputLabels = document.querySelectorAll('.issue-label-text');
+        const tableLabels = document.querySelectorAll('.issue-table-label');
+
+        inputLabels.forEach((label, index) => {
+            const num = index + 1;
+            const chinNum = getChineseNumber(num);
+            label.innerText = `爭點${chinNum}`;
+        });
+
+        tableLabels.forEach((label, index) => {
+            const num = index + 1;
+            const chinNum = getChineseNumber(num);
+            label.innerHTML = `爭點<br>${chinNum}：`;
+        });
     }
 
     function getChineseNumber(num) {
@@ -438,7 +530,7 @@
     function generatePDF() {
         const element = document.getElementById('pdf-preview-container');
         const opt = {
-            margin:       0, // 使用 CSS padding
+            margin:       0, 
             filename:     '爭點整理表格.pdf',
             image:        { type: 'jpeg', quality: 1 },
             html2canvas:  { scale: 2, useCORS: true, scrollY: 0 },
