@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>調查證據聲請表小工具</title>
+    <!-- 引入 Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- 引入 Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <!-- 引入 html2pdf.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+    <style>
+        /* --- 基礎設定 --- */
+        * { box-sizing: border-box; }
+        body {
+            /* 背景顏色：米色 */
+            background-color: #f7f4ed; 
+            padding: 20px;
+            font-family: "Microsoft JhengHei", "Heiti TC", sans-serif;
+        }
+
+        /* --- PDF 預覽區 --- */
+        #pdf-preview-container {
+            background: white;
+            width: 210mm; 
+            min-height: 297mm;
+            padding: 20mm 15mm; 
+            margin: 0 auto;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1 );
+            color: black;
+            position: relative;
+        }
+
+        /* --- 附件文字樣式 --- */
+        .attachment-text {
+            font-size: 14pt;
+            font-weight: bold;
+            margin-bottom: 5px;
+            text-align: left;
+        }
+
+        /* --- 表格樣式 --- */
+        .evidence-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12pt; 
+            table-layout: fixed; 
+            border: 2px solid black; 
+        }
+
+        /* 通用儲存格設定 */
+        .evidence-table th, 
+        .evidence-table td {
+            border: 1px solid black;
+            padding: 8px; /* 一般欄位保留內距 */
+            vertical-align: top;
+            white-space: pre-wrap; 
+            word-wrap: break-word;
+            word-break: break-all;
+            font-size: 12pt;
+        }
+
+        /* 
+           ================================================================
+           關鍵修改區域：大標題列
+           ================================================================
+        */
+        .title-row th {
+            /* 1. 強制靠左 */
+            text-align: left !important; 
+            
+            /* 2. 字體設定 */
+            font-size: 16pt;
+            font-weight: bold;
+            
+            /* 3. 高度與內距控制 (重點) */
+            /* 將左右 padding 設為 0，確保文字緊貼邊線 */
+            padding-left: 0px !important; 
+            padding-right: 0px !important;
+            
+            /* 上下 padding 設為 2px，保持高度緊湊 */
+            padding-top: 2px !important;
+            padding-bottom: 2px !important;
+            
+            /* 4. 其他 */
+            border-bottom: 1px solid black;
+            line-height: 1.1; /* 緊縮行高 */
+            vertical-align: middle;
+        }
+
+        /* 
+           ================================================================
+           關鍵修改區域：提出人/日期列
+           ================================================================
+        */
+        .info-row td {
+            /* 1. 強制靠左 */
+            text-align: left !important;
+            
+            /* 2. 垂直置中 */
+            vertical-align: middle;
+            font-size: 12pt;
+            
+            /* 3. 內距控制 (重點) */
+            /* 左邊 padding 歸零，讓文字貼齊綠色線的位置 */
+            padding-left: 0px !important; 
+            padding-right: 0px !important;
+            
+            /* 上下保留一點點空間以免太擠 */
+            padding-top: 6px;
+            padding-bottom: 6px;
+
+            /* 4. 斷行控制 */
+            white-space: pre-wrap !important;
+            word-break: break-all !important;
+        }
+
+        /* --- 第三列：欄位名稱 --- */
+        .header-row th {
+            text-align: center;
+            vertical-align: middle;
+            font-weight: bold;
+            background-color: #ffffff;
+            font-size: 12pt;
+        }
+
+        /* 內容對齊 */
+        .center-align { text-align: center; vertical-align: middle; }
+
+        /* 欄位寬度設定 */
+        .col-id { width: 6%; }
+        .col-issue { width: 15%; }
+        .col-item { width: 20%; }
+        .col-target { width: 15%; }
+        .col-addr { width: 22%; }
+        .col-fact { width: 22%; }
+
+        /* --- 輸入區樣式 --- */
+        .input-panel {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            height: calc(100vh - 40px);
+            overflow-y: auto;
+            position: sticky;
+            top: 20px;
+        }
+        
+        .issue-block {
+            border-left: 5px solid #198754;
+            background-color: #f8f9fa;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            position: relative;
+        }
+
+        .section-title {
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        /* 垃圾桶按鈕 */
+        .btn-soft-delete {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 10;
+            color: #d32f2f;
+            opacity: 0.5;
+            border-color: #ef9a9a;
+            background: transparent;
+            transition: all 0.2s;
+        }
+        
+        .btn-soft-delete:hover {
+            background-color: #ffebee;
+            opacity: 1;
+            color: #d32f2f;
+        }
+
+        /* 下載按鈕 */
+        .btn-custom-green {
+            background-color: #157347; 
+            border-color: #146c43;
+            color: white;
+        }
+        .btn-custom-green:hover {
+            background-color: #0f5132;
+            border-color: #0d462b;
+            color: white;
+        }
+
+        .char-counter {
+            font-size: 0.8rem;
+            color: #adb5bd;
+            text-align: right;
+            margin-top: 2px;
+        }
+        
+        .char-counter.limit-reached {
+            color: #e57373;
+            font-weight: bold;
+        }
+
+        .copyright-text {
+            font-size: 0.75rem;
+            color: #ced4da;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white; padding: 0; }
+            #pdf-preview-container { margin: 0; padding: 0; width: 100%; box-shadow: none; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container-fluid">
+    <div class="row">
+        <!-- 左側：資料輸入區 -->
+        <div class="col-md-4 no-print">
+            <div class="input-panel">
+                <h4 class="mb-4 text-success"><i class="bi bi-tools"></i> 調查證據聲請表小工具</h4>
+                
+                <!-- 0. 案件基本資料 -->
+                <div class="mb-4">
+                    <div class="section-title">0. 案件基本資料</div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label text-primary fw-bold">附件文字</label>
+                        <input type="text" class="form-control" id="inp_attachment" value="附件">
+                    </div>
+
+                    <div class="row g-2">
+                        <div class="col-4">
+                            <label class="form-label text-muted small">法院名稱</label>
+                            <input type="text" class="form-control" id="inp_court" value="臺灣高等法院">
+                        </div>
+                        <div class="col-3">
+                            <label class="form-label text-muted small">年度</label>
+                            <input type="text" class="form-control" id="inp_year" value="112">
+                        </div>
+                        <div class="col-3">
+                            <label class="form-label text-muted small">字別</label>
+                            <input type="text" class="form-control" id="inp_word" value="重上">
+                        </div>
+                        <div class="col-2">
+                            <label class="form-label text-muted small">案號</label>
+                            <input type="text" class="form-control" id="inp_number" value="123">
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="mb-2">
+                        <label class="form-label">提出人 (簽章)</label>
+                        <textarea class="form-control" id="inp_submitter" rows="2" placeholder="例如：上訴人 王小明"></textarea>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">提出日期</label>
+                        <textarea class="form-control" id="inp_date" rows="2" placeholder="例如：112年12月25日"></textarea>
+                    </div>
+                </div>
+
+                <!-- 1. 證據清單 -->
+                <div class="section-title">1. 調查證據列表</div>
+                <div id="evidence-container"></div>
+
+                <div class="d-grid gap-2 pt-3 border-top">
+                    <button class="btn btn-outline-success" onclick="addNewRow()">
+                        <i class="bi bi-plus-circle"></i> 增加一列
+                    </button>
+                    <button class="btn btn-custom-green btn-lg mt-2" onclick="generatePDF()">
+                        <i class="bi bi-download"></i> 下載 PDF
+                    </button>
+                    <div class="copyright-text">
+                        &copy; 2025 楊時綱. All Rights Reserved.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右側：PDF 預覽區 -->
+        <div class="col-md-8 d-flex justify-content-center">
+            <div>
+                <div id="pdf-preview-container">
+                    
+                    <!-- 附件文字 -->
+                    <div id="out_attachment" class="attachment-text">附件</div>
+
+                    <table class="evidence-table">
+                        <thead>
+                            <!-- 第一列：大標題 (padding-left: 0) -->
+                            <tr class="title-row">
+                                <th colspan="6"><span id="out_court">臺灣高等法院</span><span id="out_year">112</span>年度<span id="out_word">重上</span>字第<span id="out_number">123</span>號調查證據聲請表</th>
+                            </tr>
+                            
+                            <!-- 第二列：提出人與日期 (padding-left: 0) -->
+                            <tr class="info-row">
+                                <td colspan="3">提出人（簽章）：<span id="out_submitter"></span></td>
+                                <td colspan="3">提出日期：<span id="out_date"></span></td>
+                            </tr>
+
+                            <!-- 第三列：欄位標題 -->
+                            <tr class="header-row">
+                                <th class="col-id">編號</th>
+                                <th class="col-issue">所涉爭點</th>
+                                <th class="col-item">調查事項</th>
+                                <th class="col-target">調查對象</th>
+                                <th class="col-addr">對象地址  
+及聯絡方式</th>
+                                <th class="col-fact">待證事實  
+(限50字)</th>
+                            </tr>
+                        </thead>
+                        
+                        <tbody id="table-body">
+                            <!-- JS 動態生成內容 -->
+                        </tbody>
+                    </table>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let rowCount = 0;
+
+    window.onload = function() {
+        bindHeaderInputs();
+        // 傳入 false，表示初始化時不要自動捲動到該列
+        addNewRow(false); 
+        
+        // 強制將輸入面板的捲軸拉到最上方
+        const inputPanel = document.querySelector('.input-panel');
+        if(inputPanel) {
+            inputPanel.scrollTop = 0;
+        }
+    };
+
+    function bindHeaderInputs() {
+        const mappings = [
+            { inp: 'inp_attachment', out: 'out_attachment' },
+            { inp: 'inp_court', out: 'out_court' },
+            { inp: 'inp_year', out: 'out_year' },
+            { inp: 'inp_word', out: 'out_word' },
+            { inp: 'inp_number', out: 'out_number' },
+            { inp: 'inp_submitter', out: 'out_submitter' },
+            { inp: 'inp_date', out: 'out_date' }
+        ];
+
+        mappings.forEach(m => {
+            const input = document.getElementById(m.inp);
+            const output = document.getElementById(m.out);
+            if(input && output) {
+                output.innerText = input.value;
+                input.addEventListener('input', (e) => {
+                    output.innerText = e.target.value;
+                });
+            }
+        });
+    }
+
+    // 增加 autoScroll 參數，預設為 true
+    function addNewRow(autoScroll = true) {
+        rowCount++;
+        const currentId = rowCount;
+
+        const container = document.getElementById('evidence-container');
+        const div = document.createElement('div');
+        div.className = 'issue-block';
+        div.id = `input_block_${currentId}`;
+        
+        const deleteButtonHtml = currentId > 1 
+            ? `<button class="btn btn-sm btn-soft-delete" onclick="removeRow(${currentId})"><i class="bi bi-trash"></i></button>` 
+            : '';
+
+        div.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h6 class="fw-bold m-0">編號 ${currentId}</h6>
+                ${deleteButtonHtml}
+            </div>
+            
+            <div class="mb-2">
+                <label class="small text-muted">所涉爭點</label>
+                <textarea class="form-control" id="inp_issue_${currentId}" rows="2"></textarea>
+            </div>
+            
+            <div class="row g-2 mb-2">
+                <div class="col-6">
+                    <label class="small text-muted">調查事項</label>
+                    <textarea class="form-control" id="inp_item_${currentId}" rows="2" placeholder="例：訊問證人"></textarea>
+                </div>
+                <div class="col-6">
+                    <label class="small text-muted">調查對象</label>
+                    <textarea class="form-control" id="inp_target_${currentId}" rows="2" placeholder="姓名或單位"></textarea>
+                </div>
+            </div>
+
+            <div class="mb-2">
+                <label class="small text-muted">對象地址及聯絡方式</label>
+                <textarea class="form-control" id="inp_addr_${currentId}" rows="2"></textarea>
+            </div>
+
+            <div class="mb-1">
+                <label class="small text-muted fw-bold">待證事實 (限50字)</label>
+                <textarea class="form-control" id="inp_fact_${currentId}" rows="3" maxlength="50"></textarea>
+                <div class="char-counter" id="cnt_fact_${currentId}">限制：0/50字</div>
+            </div>
+        `;
+        container.appendChild(div);
+
+        const tbody = document.getElementById('table-body');
+        const tr = document.createElement('tr');
+        tr.id = `table_row_${currentId}`;
+        tr.innerHTML = `
+            <td class="col-id center-align">${currentId}</td>
+            <td id="out_issue_${currentId}"></td>
+            <td id="out_item_${currentId}"></td>
+            <td id="out_target_${currentId}"></td>
+            <td id="out_addr_${currentId}"></td>
+            <td id="out_fact_${currentId}"></td>
+        `;
+        tbody.appendChild(tr);
+
+        bindSimpleInput(`inp_issue_${currentId}`, `out_issue_${currentId}`);
+        bindSimpleInput(`inp_item_${currentId}`, `out_item_${currentId}`);
+        bindSimpleInput(`inp_target_${currentId}`, `out_target_${currentId}`);
+        bindSimpleInput(`inp_addr_${currentId}`, `out_addr_${currentId}`);
+        bindInputWithLimit(`inp_fact_${currentId}`, `out_fact_${currentId}`, `cnt_fact_${currentId}`);
+
+        // 只有在 autoScroll 為 true 時才捲動 (按按鈕時)
+        if (autoScroll) {
+            div.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }
+
+    function removeRow(id) {
+        if(!confirm('確定要刪除此列嗎？')) return;
+        
+        const inputBlock = document.getElementById(`input_block_${id}`);
+        const tableRow = document.getElementById(`table_row_${id}`);
+        
+        if(inputBlock) inputBlock.remove();
+        if(tableRow) tableRow.remove();
+        
+        renumberRows();
+    }
+
+    function renumberRows() {
+        const tbody = document.getElementById('table-body');
+        const rows = tbody.children;
+        const container = document.getElementById('evidence-container');
+        const blocks = container.querySelectorAll('.issue-block');
+        
+        for(let i=0; i<rows.length; i++) {
+            const newNum = i + 1;
+            if(rows[i].cells[0]) {
+                rows[i].cells[0].innerText = newNum;
+            }
+            if(blocks[i]) {
+                const title = blocks[i].querySelector('h6');
+                if(title) title.innerText = `編號 ${newNum}`;
+            }
+        }
+    }
+
+    function bindSimpleInput(inputId, outId) {
+        const input = document.getElementById(inputId);
+        const output = document.getElementById(outId);
+        if(!input || !output) return;
+
+        input.addEventListener('input', (e) => {
+            output.innerText = e.target.value;
+        });
+    }
+
+    function bindInputWithLimit(inputId, outId, counterId) {
+        const input = document.getElementById(inputId);
+        const output = document.getElementById(outId);
+        const counter = document.getElementById(counterId);
+        
+        if(!input || !output) return;
+
+        const update = () => {
+            output.innerText = input.value;
+            if(counter) {
+                const len = input.value.length;
+                counter.innerText = `限制：${len}/50字`;
+                if(len >= 50) counter.classList.add('limit-reached');
+                else counter.classList.remove('limit-reached');
+            }
+        };
+
+        input.addEventListener('input', update);
+        update();
+    }
+
+    function generatePDF() {
+        const element = document.getElementById('pdf-preview-container');
+        const opt = {
+            margin:       0,
+            filename:     '調查證據聲請表.pdf',
+            image:        { type: 'jpeg', quality: 1 },
+            html2canvas:  { scale: 2, useCORS: true, scrollY: 0 },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+        html2pdf().set(opt).from(element).save();
+    }
+</script>
+
+</body>
+</html>
