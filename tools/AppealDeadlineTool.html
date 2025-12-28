@@ -202,9 +202,39 @@
             color: #777;
         }
 
+        /* 針對手機顯示的 RWD 改進 */
         @media (max-width: 900px) {
             .input-row { flex-direction: column; }
-            .control-row { flex-direction: column; align-items: flex-start; }
+            .control-row { flex-direction: column; align-items: stretch; }
+            .type-switch label { flex: 1; padding: 10px 0; }
+            .download-btn { justify-content: center; }
+        }
+
+        @media (max-width: 600px) {
+            body { padding: 10px; font-size: 18px; }
+            .container { padding: 10px; }
+            .page-title { font-size: 30px; margin-bottom: 20px; }
+            .header-section { padding: 15px; }
+            
+            .input-group { min-width: 100%; }
+            .input-group label { font-size: 20px; }
+            
+            /* 讓下拉選單在窄螢幕下更整齊 */
+            .date-selectors { justify-content: space-between; }
+            .date-selectors select { 
+                flex: 1; 
+                min-width: 0; /* 讓 select 可以縮小 */
+                padding: 8px 5px;
+                font-size: 18px;
+            }
+
+            .card { padding: 20px 15px; }
+            .card h3 { font-size: 26px; }
+            .level-title { font-size: 20px; padding: 8px 15px; }
+            .deadline-item { flex-direction: column; gap: 5px; }
+            .deadline-label { font-size: 18px; }
+            .deadline-value { font-size: 24px; text-align: right; }
+            .note { font-size: 16px; }
         }
     </style>
 </head>
@@ -402,9 +432,6 @@
         const noticeDate = getJSDate('notice');
         if (!recvDate) return;
 
-        // 檔名編號邏輯：
-        // 有填聲明上訴日期，則以補理由期限(聲明後20日)為檔名日期
-        // 沒填則以聲明上訴期限(收到後20日)為檔名日期
         let targetDate;
         if (noticeDate) {
             targetDate = new Date(noticeDate.getTime() + 20 * 24 * 60 * 60 * 1000);
@@ -417,7 +444,7 @@
         
         html2canvas(container, {
             backgroundColor: '#FAF7F2',
-            scale: 2 // 提高截圖解析度
+            scale: 2 
         }).then(canvas => {
             const link = document.createElement('a');
             link.download = `${dateStr}上訴期間_.jpg`;
