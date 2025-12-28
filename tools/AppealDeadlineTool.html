@@ -50,7 +50,7 @@
             margin-bottom: 25px;
         }
 
-        /* 控制列 */
+        /* 切換鈕與下載鈕控制列 */
         .control-row {
             display: flex;
             justify-content: space-between;
@@ -96,6 +96,7 @@
             gap: 10px;
         }
 
+        /* 日期輸入區域 */
         .input-row {
             display: flex;
             justify-content: space-between;
@@ -142,6 +143,7 @@
             border-radius: 4px;
         }
 
+        /* 結果展示區域 */
         .result-section {
             display: flex;
             justify-content: center;
@@ -200,46 +202,7 @@
             color: #777;
         }
 
-        /* 手機版截圖彈窗 */
-        #screenshot-modal {
-            display: none;
-            position: fixed;
-            z-index: 9999;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.85);
-            padding-top: 30px;
-            text-align: center;
-        }
-
-        #screenshot-modal img {
-            max-width: 90%;
-            max-height: 70%;
-            border: 2px solid #fff;
-            border-radius: 10px;
-        }
-
-        .modal-tip {
-            color: #fff;
-            margin-top: 20px;
-            font-size: 20px;
-            line-height: 1.5;
-            padding: 0 20px;
-        }
-
-        .close-modal {
-            position: absolute;
-            top: 15px;
-            right: 20px;
-            color: #fff;
-            font-size: 40px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        /* RWD 改進 */
+        /* 針對手機顯示的 RWD 改進 */
         @media (max-width: 900px) {
             .input-row { flex-direction: column; }
             .control-row { flex-direction: column; align-items: stretch; }
@@ -250,16 +213,25 @@
         @media (max-width: 600px) {
             body { padding: 10px; font-size: 18px; }
             .container { padding: 10px; }
-            .page-title { font-size: 30px; }
+            .page-title { font-size: 30px; margin-bottom: 20px; }
             .header-section { padding: 15px; }
+            
             .input-group { min-width: 100%; }
             .input-group label { font-size: 20px; }
+            
             .date-selectors { justify-content: space-between; }
-            .date-selectors select { flex: 1; min-width: 0; padding: 8px 5px; font-size: 18px; }
+            .date-selectors select { 
+                flex: 1; 
+                min-width: 0;
+                padding: 8px 5px;
+                font-size: 18px;
+            }
+
             .card { padding: 20px 15px; }
             .card h3 { font-size: 26px; }
-            .level-title { font-size: 20px; }
+            .level-title { font-size: 20px; padding: 8px 15px; }
             .deadline-item { flex-direction: column; gap: 5px; }
+            .deadline-label { font-size: 18px; }
             .deadline-value { font-size: 24px; text-align: right; }
             .note { font-size: 16px; }
         }
@@ -271,6 +243,7 @@
     <div class="page-title">上訴期間計算小工具</div>
 
     <div class="header-section">
+        <!-- 控制列：切換與下載 -->
         <div class="control-row">
             <div class="type-switch">
                 <input type="radio" id="type-crim" name="caseType" value="criminal" checked>
@@ -279,12 +252,13 @@
                 <label for="type-civ" class="lab-civ">民事</label>
             </div>
             
-            <button class="download-btn" id="btn-save">
+            <button class="download-btn" onclick="handleDownload()">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                 下載截圖
             </button>
         </div>
 
+        <!-- 日期輸入區域 -->
         <div class="input-row">
             <div class="input-group">
                 <label>收到判決日期：</label>
@@ -312,6 +286,7 @@
 
     <!-- 結果區 -->
     <div class="result-section">
+        <!-- 刑事結果卡片 -->
         <div id="card-criminal" class="card criminal active">
             <h3>刑事上訴期間</h3>
             <div class="level-block">
@@ -338,6 +313,7 @@
             </div>
         </div>
 
+        <!-- 民事結果卡片 -->
         <div id="card-civil" class="card civil">
             <h3>民事上訴期間</h3>
             <div class="level-block">
@@ -370,17 +346,8 @@
     </div>
 </div>
 
-<!-- 截圖預覽 Modal -->
-<div id="screenshot-modal">
-    <span class="close-modal" id="close-modal">&times;</span>
-    <img id="screenshot-img" src="" alt="截圖預覽">
-    <div class="modal-tip">
-        <strong>【偵測到手機瀏覽器】</strong><br>
-        請「長按圖片」選擇「儲存圖片」或「下載圖片」即可存入相簿。
-    </div>
-</div>
-
 <script>
+    // 初始化下拉選單
     function initDropdowns() {
         const selects = ['recv', 'notice'];
         selects.forEach(prefix => {
@@ -396,6 +363,7 @@
         document.getElementById('recv-d').value = 1;
     }
 
+    // 取得民國日期轉為西元 JS Date
     function getJSDate(prefix) {
         const y = parseInt(document.getElementById(prefix + '-y').value);
         const m = parseInt(document.getElementById(prefix + '-m').value);
@@ -404,11 +372,13 @@
         return new Date(y + 1911, m - 1, d);
     }
 
+    // 格式化顯示字串 (民國)
     function formatROC(date) {
         if (!date || isNaN(date.getTime())) return "日期錯誤";
         return `民國 ${date.getFullYear() - 1911} / ${date.getMonth() + 1} / ${date.getDate()}`;
     }
 
+    // 格式化檔名
     function formatFilenameDate(date) {
         const y = date.getFullYear() - 1911;
         const m = (date.getMonth() + 1).toString().padStart(2, '0');
@@ -416,16 +386,21 @@
         return `${y}${m}${d}`;
     }
 
+    // 計算邏輯
     function calculate() {
         const recvDate = getJSDate('recv');
         const noticeDate = getJSDate('notice');
         if (!recvDate) return;
+
         const d20 = new Date(recvDate.getTime() + 20 * 24 * 60 * 60 * 1000);
         const d20Str = formatROC(d20);
+        
         ['crim-1-2-notice', 'crim-2-3-notice', 'civ-1-2-notice', 'civ-2-3-notice'].forEach(id => {
             document.getElementById(id).innerText = d20Str;
         });
+
         document.getElementById('crim-1-2-reason').innerText = formatROC(new Date(recvDate.getTime() + 40 * 24 * 60 * 60 * 1000));
+
         if (noticeDate) {
             const reasonD20 = formatROC(new Date(noticeDate.getTime() + 20 * 24 * 60 * 60 * 1000));
             document.getElementById('crim-2-3-reason').innerText = reasonD20;
@@ -442,8 +417,20 @@
         document.getElementById('card-civil').classList.toggle('active', !isCrim);
     }
 
-    // 儲存/截圖核心功能
-    function processSave() {
+    // 核心下載判斷邏輯
+    function handleDownload() {
+        // 偵測是否為手機/平板裝置
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+        if (isMobile) {
+            alert("僅供桌機下載使用，手機請自行截圖");
+        } else {
+            downloadImage();
+        }
+    }
+
+    // 電腦版截圖下載功能
+    function downloadImage() {
         const recvDate = getJSDate('recv');
         const noticeDate = getJSDate('notice');
         if (!recvDate) return;
@@ -452,35 +439,17 @@
         const dateStr = formatFilenameDate(targetDate);
         const container = document.getElementById('main-content');
         
-        // 判斷是否為手機端 (偵測寬度或 UserAgent)
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 900;
-
         html2canvas(container, {
             backgroundColor: '#FAF7F2',
             scale: 2 
         }).then(canvas => {
-            const dataURL = canvas.toDataURL('image/jpeg', 0.9);
-            
-            if (isMobile) {
-                // 手機版：顯示彈窗並提示長按
-                document.getElementById('screenshot-img').src = dataURL;
-                document.getElementById('screenshot-modal').style.display = 'block';
-            } else {
-                // 電腦版：直接下載
-                const link = document.createElement('a');
-                link.download = `${dateStr}上訴期間_.jpg`;
-                link.href = dataURL;
-                link.click();
-            }
+            const link = document.createElement('a');
+            link.download = `${dateStr}上訴期間_.jpg`;
+            link.href = canvas.toDataURL('image/jpeg', 0.9);
+            link.click();
         });
     }
 
-    // 關閉 Modal
-    document.getElementById('close-modal').onclick = function() {
-        document.getElementById('screenshot-modal').style.display = 'none';
-    }
-
-    document.getElementById('btn-save').addEventListener('click', processSave);
     document.querySelectorAll('select, input[name="caseType"]').forEach(el => {
         el.addEventListener('change', () => { calculate(); toggleCard(); });
     });
