@@ -19,8 +19,14 @@
                 </div>
             </header>
             <ul class="sidebar-nav">
+                <!-- 新增：上訴期間計算小工具 (設為預設 active) -->
                 <li>
-                    <a href="./tools/tool-security-guard-salary.html" target="tool-frame" class="active">
+                    <a href="./tools/AppealDeadlineTool.html" target="tool-frame" class="active">
+                        上訴期間計算小工具
+                    </a>
+                </li>
+                <li>
+                    <a href="./tools/tool-security-guard-salary.html" target="tool-frame">
                         保全人員薪資結構計算
                     </a>
                 </li>
@@ -29,7 +35,6 @@
                         爭點整理表格小工具
                     </a>
                 </li>
-                <!-- 新增的工具連結 -->
                 <li>
                     <a href="./tools/tool-evidence-list-generator.html" target="tool-frame">
                         調查證據聲請表小工具
@@ -45,13 +50,13 @@
                         （小工具研發中）
                     </a>
                 </li>
-                <!-- 未來新增的工具請加在這裡 -->
             </ul>
         </nav>
 
         <!-- 右側內容顯示區 -->
         <main class="content-pane">
-            <iframe name="tool-frame" id="tool-frame" src="./tools/tool-security-guard-salary.html" frameborder="0"></iframe>
+            <!-- 將 src 預設改為 AppealDeadlineTool.html 以對應導覽列的 active 狀態 -->
+            <iframe name="tool-frame" id="tool-frame" src="./tools/AppealDeadlineTool.html" frameborder="0"></iframe>
         </main>
     </div>
 
