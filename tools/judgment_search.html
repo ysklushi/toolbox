@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>極速判決檢索系統 (自訂語法版)</title>
+    <!-- 引入主樣式表，確保字體與變數一致 -->
+    <link rel="stylesheet" href="../style.css">
+    <style>
+        /* --- 整合風格設定 --- */
+        :root { 
+            /* 將原有變數映射到 style.css 的變數 */
+            --primary: var(--text-color);       /* 主色調 #1D5B79 */
+            --accent: var(--accent-color);      /* 強調色 #E8A87C */
+            --bg: var(--content-bg);            /* 背景色 #FFFDF9 */
+            --border: var(--border-color);      /* 邊框色 #e0d8c8 */
+            
+            /* 功能性顏色維持原樣，或稍微調整以配合柔和風格 */
+            --success: #569E78; /* 稍微柔和的綠色 */
+            --danger: #C85A5A;  /* 稍微柔和的紅色 */
+        }
+
+        body { 
+            /* 字體將自動繼承 style.css 的設定 */
+            background-color: var(--bg); 
+            margin: 0; 
+            padding: 20px; 
+            color: var(--text-color);
+        }
+
+        /* 容器風格調整：去除過重的陰影，改用邊框 */
+        .container { 
+            max-width: 1100px; 
+            margin: 0 auto; 
+            background: #fff; 
+            padding: 40px; 
+            border-radius: 8px; 
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02); 
+        }
+
+        h1 { 
+            text-align: center; 
+            color: var(--primary); 
+            border-bottom: 2px solid var(--accent); 
+            padding-bottom: 15px; 
+            margin-top: 0;
+            font-weight: 700;
+        }
+
+        h3 {
+            color: var(--light-text-color);
+            border-bottom: 1px dashed var(--border);
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+
+        /* 進度條樣式 */
+        .progress-container { width: 100%; background-color: #eee; border-radius: 20px; margin-top: 15px; display: none; overflow: hidden; }
+        .progress-bar { width: 0%; height: 20px; background-color: var(--success); transition: width 0.2s; text-align: center; color: white; font-size: 12px; line-height: 20px; }
+
+        .panel { 
+            background: #fff; 
+            /* 移除明顯的邊框，改用更乾淨的間距 */
+            border: 1px solid transparent; 
+            padding: 10px 0 30px 0; 
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 20px; 
+        }
+        .panel:last-child { border-bottom: none; }
+
+        .upload-area { 
+            border: 2px dashed var(--border); 
+            background: var(--bg); /* 使用米色背景 */
+            padding: 30px; 
+            text-align: center; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            transition: 0.3s; 
+            color: var(--light-text-color);
+        }
+        .upload-area:hover { 
+            border-color: var(--accent); 
+            background: #fff; 
+        }
+        #folderInput { display: none; }
+
+        .search-box { display: flex; gap: 10px; }
+        
+        input[type="text"] { 
+            flex: 1; 
+            padding: 12px; 
+            font-size: 16px; 
+            border: 1px solid var(--border); 
+            border-radius: 4px; 
+            background-color: #fff;
+            color: var(--text-color);
+            outline: none;
+        }
+        input[type="text"]:focus {
+            border-color: var(--accent);
+        }
+
+        button.btn { 
+            padding: 12px 24px; 
+            font-size: 16px; 
+            background: var(--primary); 
+            color: white; 
+            border: none; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            transition: 0.2s; 
+            font-family: inherit;
+        }
+        button.btn:hover { 
+            opacity: 0.9; 
+            transform: translateY(-1px);
+        }
+        button.btn:disabled { 
+            background: #ccc; 
+            cursor: not-allowed; 
+            transform: none;
+        }
+
+        .btn-group { display: flex; gap: 10px; }
+        
+        .result-stats { display: flex; justify-content: space-between; align-items: center; margin: 10px 0; font-weight: bold; flex-wrap: wrap; gap: 10px; color: var(--light-text-color); }
+        
+        .result-list { 
+            list-style: none; 
+            padding: 0; 
+            border: 1px solid var(--border); 
+            border-radius: 4px;
+            max-height: 600px; 
+            overflow-y: auto; 
+        }
+        .result-item { 
+            padding: 20px; 
+            border-bottom: 1px solid var(--border); 
+            position: relative; 
+            transition: background 0.2s;
+        }
+        .result-item:last-child { border-bottom: none; }
+        .result-item:hover { background: var(--bg); }
+        
+        .case-header { display: flex; justify-content: space-between; color: var(--light-text-color); font-size: 0.9em; margin-bottom: 8px; padding-right: 40px; }
+        .case-id { color: var(--accent); font-weight: bold; font-size: 1.1em; }
+        .case-title { font-weight: 700; color: var(--text-color); margin-bottom: 6px; font-size: 1.05em; }
+        .case-snippet { font-size: 0.9em; color: #666; line-height: 1.5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        /* 單筆刪除按鈕 */
+        .delete-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: transparent;
+            color: #ccc;
+            border: 1px solid #eee;
+            border-radius: 4px;
+            width: 24px;
+            height: 24px;
+            line-height: 22px;
+            text-align: center;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        .delete-btn:hover {
+            background: var(--danger);
+            color: white;
+            border-color: var(--danger);
+        }
+
+        .load-more-btn { 
+            width: 100%; 
+            padding: 12px; 
+            background: var(--light-text-color); 
+            color: white; 
+            border: none; 
+            cursor: pointer; 
+            margin-top: 15px; 
+            border-radius: 4px;
+            display: none; 
+        }
+        .load-more-btn:hover { background: var(--text-color); }
+
+        .status-msg { font-size: 0.9em; color: var(--light-text-color); margin-top: 10px; }
+        .help-text { 
+            font-size: 0.9em; 
+            color: var(--light-text-color); 
+            background-color: var(--bg);
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 15px;
+            line-height: 1.6;
+        }
+        .help-text b { color: var(--text-color); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🚀 極速判決檢索系統 (自訂語法版)</h1>
+
+    <!-- 1. 資料讀取區 -->
+    <div class="panel">
+        <h3>1. 資料來源</h3>
+        <input type="file" id="folderInput" webkitdirectory directory multiple>
+        
+        <div class="upload-area" onclick="document.getElementById('folderInput').click()">
+            <div style="font-size: 2em; margin-bottom: 10px;">📂</div>
+            <div>點擊選取資料夾 (JSON)</div>
+        </div>
+
+        <div id="progressBox" class="progress-container">
+            <div id="progressBar" class="progress-bar">0%</div>
+        </div>
+        <div id="statusMsg" class="status-msg">等待匯入...</div>
+    </div>
+
+    <!-- 2. 搜尋區 -->
+    <div class="panel">
+        <h3>2. 搜尋設定</h3>
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="輸入關鍵字 (如: {車禍+賠償}*死刑 -駁回)" disabled onkeypress="if(event.key==='Enter') startSearch()">
+            <button id="searchBtn" class="btn" onclick="startSearch()" disabled>🔍 搜尋</button>
+            <button id="stopBtn" class="btn" style="background:var(--danger); display:none;" onclick="stopSearch()">⏹ 停止</button>
+        </div>
+        <div class="help-text">
+            語法說明：<br>
+            <b>And</b>：用「+」或「and」(如: 車禍+民法)<br>
+            <b>Or</b>：用「*」(如: 優先承買*優先承購)<br>
+            <b>Not</b>：用「 -」(空白加減號) (如: 認領 -未成年)<br>
+            <b>優先</b>：用「{}」(如: {A+B}*{C+D})
+        </div>
+    </div>
+
+    <!-- 3. 結果區 -->
+    <div class="panel">
+        <h3>3. 結果列表</h3>
+        <div class="result-stats">
+            <span id="resultCount">尚未搜尋</span>
+            <div class="btn-group" id="downloadArea" style="display:none;">
+                <button class="btn" style="background:var(--success); padding:8px 15px; font-size:14px;" onclick="downloadTXT()">📥 下載 TXT</button>
+                <button class="btn" style="background:var(--light-text-color); padding:8px 15px; font-size:14px;" onclick="downloadJSON()">📥 下載 JSON</button>
+            </div>
+        </div>
+        <ul id="resultList" class="result-list"></ul>
+        <button id="loadMoreBtn" class="load-more-btn" onclick="renderNextBatch()">顯示更多結果...</button>
+    </div>
+</div>
+
+<script>
+    let allData = []; 
+    let searchResults = []; 
+    let isSearching = false; 
+    let renderIndex = 0; 
+    const BATCH_SIZE = 50; 
+
+    // --- 1. 高效能檔案讀取 (保留進度條功能) ---
+    document.getElementById('folderInput').addEventListener('change', async function(e) {
+        const files = Array.from(e.target.files).filter(f => f.name.toLowerCase().endsWith('.json'));
+        if (!files.length) return;
+
+        allData = [];
+        const statusEl = document.getElementById('statusMsg');
+        const pBox = document.getElementById('progressBox');
+        const pBar = document.getElementById('progressBar');
+        
+        // 顯示進度條
+        pBox.style.display = 'block';
+        statusEl.textContent = `準備讀取 ${files.length} 個檔案...`;
+        
+        const CHUNK_SIZE = 500; 
+        let loadedCount = 0;
+
+        for (let i = 0; i < files.length; i += CHUNK_SIZE) {
+            const chunk = files.slice(i, i + CHUNK_SIZE);
+            const promises = chunk.map(readFile);
+            const results = await Promise.all(promises);
+            
+            results.forEach(item => {
+                if (item) allData.push(item);
+            });
+
+            loadedCount += chunk.length;
+            
+            // 更新進度條百分比
+            const percent = Math.min(100, Math.round((loadedCount / files.length) * 100));
+            pBar.style.width = percent + "%";
+            pBar.textContent = percent + "%";
+            statusEl.textContent = `已讀取: ${allData.length} 筆...`;
+
+            // 讓出執行緒以更新 UI
+            await new Promise(r => setTimeout(r, 0));
+        }
+
+        statusEl.textContent = `✅ 讀取完成！共載入 ${allData.length} 筆資料`;
+        document.getElementById('searchInput').disabled = false;
+        document.getElementById('searchBtn').disabled = false;
+        pBar.style.backgroundColor = "var(--success)";
+    });
+
+    function readFile(file) {
+        return new Promise(resolve => {
+            const reader = new FileReader();
+            reader.onload = e => {
+                try {
+                    const json = JSON.parse(e.target.result);
+                    resolve({
+                        id: json.JID || '未知',
+                        date: json.JDATE || '',
+                        title: json.JTITLE || '',
+                        full: json.JFULL || '',
+                        year: json.JYEAR || '',
+                        caseNo: json.JNO || '',
+                        caseType: json.JCASE || ''
+                    });
+                } catch { resolve(null); }
+            };
+            reader.readAsText(file);
+        });
+    }
+
+    // --- 2. 搜尋功能 ---
+    async function startSearch() {
+        const query = document.getElementById('searchInput').value.trim();
+        if (!query) return;
+
+        isSearching = true;
+        searchResults = [];
+        document.getElementById('resultList').innerHTML = '';
+        document.getElementById('searchBtn').disabled = true;
+        document.getElementById('stopBtn').style.display = 'inline-block';
+        document.getElementById('loadMoreBtn').style.display = 'none';
+        document.getElementById('downloadArea').style.display = 'none';
+        
+        const statusEl = document.getElementById('resultCount');
+        statusEl.textContent = "搜尋中...";
+
+        let matchFunc;
+        try {
+            matchFunc = buildQueryFunction(query);
+        } catch (e) {
+            alert("語法錯誤，請檢查括號或運算符號");
+            console.error(e);
+            stopSearch();
+            return;
+        }
+
+        const SEARCH_CHUNK = 2000;
+        let searchedCount = 0;
+
+        for (let i = 0; i < allData.length; i += SEARCH_CHUNK) {
+            if (!isSearching) break;
+
+            const chunk = allData.slice(i, i + SEARCH_CHUNK);
+            const matches = chunk.filter(doc => matchFunc(doc));
+            searchResults.push(...matches);
+
+            searchedCount += chunk.length;
+            statusEl.textContent = `搜尋中... (已掃描 ${searchedCount} / ${allData.length} 筆，命中 ${searchResults.length} 筆)`;
+
+            await new Promise(r => setTimeout(r, 0));
+        }
+
+        finishSearch();
+    }
+
+    function stopSearch() {
+        isSearching = false;
+    }
+
+    function finishSearch() {
+        document.getElementById('searchBtn').disabled = false;
+        document.getElementById('stopBtn').style.display = 'none';
+        updateCountDisplay();
+        
+        if (searchResults.length > 0) {
+            document.getElementById('downloadArea').style.display = 'flex';
+            renderIndex = 0;
+            renderNextBatch();
+        } else {
+            document.getElementById('resultList').innerHTML = '<li style="padding:20px;text-align:center">查無資料</li>';
+        }
+    }
+
+    function updateCountDisplay() {
+        document.getElementById('resultCount').textContent = `搜尋完成：共找到 ${searchResults.length} 筆`;
+    }
+
+    // --- 3. 語法解析核心 ---
+    function buildQueryFunction(query) {
+        let q = query
+            .replace(/＋/g, '+')
+            .replace(/＊/g, '*')
+            .replace(/｛/g, '{')
+            .replace(/｝/g, '}');
+
+        q = q.replace(/and/gi, '+'); 
+        q = q.replace(/\s+\-/g, ' && !');
+        
+        if (q.trim().startsWith('-')) {
+            q = ' !' + q.trim().substring(1);
+        }
+
+        q = q.replace(/([\+\*\{\}\!])/g, ' $1 ');
+
+        const tokens = q.split(/\s+/).filter(t => t.length > 0);
+        let jsExpr = "";
+
+        for (let i = 0; i < tokens.length; i++) {
+            const t = tokens[i];
+            if (t === '+') {
+                jsExpr += ' && '; 
+            } else if (t === '*') {
+                jsExpr += ' || '; 
+            } else if (t === '{') {
+                jsExpr += ' ( '; 
+            } else if (t === '}') {
+                jsExpr += ' ) '; 
+            } else if (t === '!') {
+                jsExpr += ' ! '; 
+            } else if (t === '&&' || t === '||') {
+                 jsExpr += t;
+            } else {
+                const cleanTerm = t.replace(/'/g, "\\'");
+                jsExpr += `check(doc, '${cleanTerm}')`;
+            }
+        }
+
+        return new Function("doc", `return (${jsExpr});`);
+    }
+
+    function check(doc, term) {
+        const fullText = (doc.id + " " + doc.date + " " + doc.title + " " + (doc.full || "")).toLowerCase();
+        return fullText.includes(term.toLowerCase());
+    }
+
+    // --- 4. 渲染與刪除功能 (HTML 生成部分微調以適應 CSS) ---
+    function renderNextBatch(limitTo = null) {
+        const list = document.getElementById('resultList');
+        const btn = document.getElementById('loadMoreBtn');
+        const endIndex = limitTo !== null ? limitTo : Math.min(renderIndex + BATCH_SIZE, searchResults.length);
+        
+        if (limitTo !== null) {
+            list.innerHTML = ''; 
+            renderIndex = 0;
+        }
+
+        let htmlBuffer = "";
+        for (let i = renderIndex; i < endIndex; i++) {
+            const item = searchResults[i];
+            const snippet = (item.full || "").substring(0, 80).replace(/\s+/g, ' ') + '...';
+            
+            // 使用 class "case-title" 取代原本的 inline style，以便 CSS 控制顏色
+            htmlBuffer += `
+                <li class="result-item">
+                    <button class="delete-btn" onclick="deleteItem(${i})" title="移除此筆">✖</button>
+                    <div class="case-header">
+                        <span class="case-id">${item.id}</span>
+                        <span>${item.date}</span>
+                    </div>
+                    <div class="case-title">${item.title}</div>
+                    <div class="case-snippet">${snippet}</div>
+                </li>`;
+        }
+        
+        list.insertAdjacentHTML('beforeend', htmlBuffer);
+        renderIndex = endIndex;
+
+        if (renderIndex < searchResults.length) {
+            btn.style.display = 'block';
+            btn.textContent = `顯示更多 (${renderIndex} / ${searchResults.length})`;
+        } else {
+            btn.style.display = 'none';
+        }
+    }
+
+    function deleteItem(index) {
+        if (index < 0 || index >= searchResults.length) return;
+        searchResults.splice(index, 1);
+        updateCountDisplay();
+        
+        if (searchResults.length === 0) {
+            document.getElementById('resultList').innerHTML = '<li style="padding:20px;text-align:center">資料已全部移除</li>';
+            document.getElementById('downloadArea').style.display = 'none';
+            document.getElementById('loadMoreBtn').style.display = 'none';
+            return;
+        }
+        renderNextBatch(Math.min(renderIndex, searchResults.length));
+    }
+
+    // --- 5. 下載與檔名生成 ---
+    function getDownloadFilename(extension) {
+        const now = new Date();
+        const yyyy = now.getFullYear();
+        const mm = String(now.getMonth() + 1).padStart(2, '0');
+        const dd = String(now.getDate()).padStart(2, '0');
+        const dateStr = `${yyyy}${mm}${dd}`;
+
+        let rawQuery = document.getElementById('searchInput').value.trim();
+        
+        let safeQuery = rawQuery
+            .replace(/\+/g, 'and')
+            .replace(/and/gi, 'and') 
+            .replace(/\*/g, 'or')
+            .replace(/\s+\-/g, '_not_') 
+            .replace(/[\{\}]/g, '')     
+            .replace(/[\/\\:*?"<>|]/g, '_') 
+            .replace(/\s+/g, '_');      
+
+        const namePart = safeQuery ? `${dateStr}${safeQuery}` : `${dateStr}_result`;
+        return `${namePart}.${extension}`;
+    }
+
+    function downloadTXT() {
+        if (!searchResults.length) return;
+        const sep = "\n" + "=".repeat(60) + "\n";
+        let content = "搜尋結果\n\n";
+        searchResults.forEach(item => {
+            content += `案號：${item.id}\n日期：${item.date}\n案由：${item.title}\n`;
+            content += sep + item.full + "\n" + sep + "\n";
+        });
+        triggerDownload(content, getDownloadFilename('txt'), "text/plain;charset=utf-8");
+    }
+
+    function downloadJSON() {
+        if (!searchResults.length) return;
+        const content = JSON.stringify(searchResults, null, 2);
+        triggerDownload(content, getDownloadFilename('json'), "application/json");
+    }
+
+    function triggerDownload(content, filename, mimeType) {
+        const blob = new Blob([content], { type: mimeType });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(a.href);
+    }
+</script>
+
+</body>
+</html>
