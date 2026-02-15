@@ -19,10 +19,16 @@
                 </div>
             </header>
             <ul class="sidebar-nav">
-                <!-- 新增：上訴期間計算小工具 (設為預設 active) -->
+                <!-- 上訴期間計算小工具 (設為預設 active) -->
                 <li>
                     <a href="./tools/AppealDeadlineTool.html" target="tool-frame" class="active">
                         上訴期間計算小工具
+                    </a>
+                </li>
+                <!-- 新增：判決搜尋小工具 (放在此處或其他順序皆可) -->
+                <li>
+                    <a href="./tools/judgment_search.html" target="tool-frame">
+                        判決搜尋小工具
                     </a>
                 </li>
                 <li>
@@ -45,17 +51,12 @@
                         （小工具研發中）
                     </a>
                 </li>
-                <li>
-                    <a href="./tools/tool-placeholder-2.html" target="tool-frame">
-                        （小工具研發中）
-                    </a>
-                </li>
             </ul>
         </nav>
 
         <!-- 右側內容顯示區 -->
         <main class="content-pane">
-            <!-- 將 src 預設改為 AppealDeadlineTool.html 以對應導覽列的 active 狀態 -->
+            <!-- iframe 預設顯示首頁或第一個工具 -->
             <iframe name="tool-frame" id="tool-frame" src="./tools/AppealDeadlineTool.html" frameborder="0"></iframe>
         </main>
     </div>
