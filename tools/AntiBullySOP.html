@@ -840,22 +840,56 @@
             return safe.replace(re, '<mark class="search-highlight">$1</mark>');
         }
 
+        // 搜尋狀態變數
+        let searchMatches = [];
+        let currentSearchIndex = -1;
+
+        // 當使用者輸入文字時觸發
         function handleSearch() {
             const input = document.getElementById('searchInput');
             searchQuery = input.value;
             
-            // 1. 重新渲染畫面（此時會把有關鍵字的字加上黃色螢光筆標記）
-            renderContent();
+            renderContent(); // 重新渲染加上黃色螢光筆
 
-            // 2. 新增功能：如果有輸入關鍵字，自動跳轉定位
-            if (searchQuery.trim() !== '') {
-                // 尋找畫面上第一個被標記為黃色螢光筆的元素
-                const firstMatch = document.querySelector('.search-highlight');
-                if (firstMatch) {
-                    // 讓右側內容區平滑滾動到該文字的位置，並將其置中顯示
-                    firstMatch.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
+            // 抓出畫面上所有被標記黃色的元素
+            searchMatches = Array.from(document.querySelectorAll('.search-highlight'));
+            
+            if (searchMatches.length > 0) {
+                currentSearchIndex = 0; // 從第一個開始
+                focusMatch(currentSearchIndex);
+            } else {
+                currentSearchIndex = -1;
             }
+        }
+
+        // 當使用者在搜尋框按下鍵盤時觸發 (負責 Enter 往下跳)
+        function handleSearchNav(event) {
+            // 如果按下 Enter 鍵，且畫面上有搜尋結果
+            if (event.key === 'Enter' && searchMatches.length > 0) {
+                event.preventDefault(); // 避免網頁重新整理
+                
+                if (event.shiftKey) {
+                    // 按下 Shift + Enter：往上一個跳
+                    currentSearchIndex = (currentSearchIndex - 1 + searchMatches.length) % searchMatches.length;
+                } else {
+                    // 只按 Enter：往下一個跳
+                    currentSearchIndex = (currentSearchIndex + 1) % searchMatches.length;
+                }
+                focusMatch(currentSearchIndex);
+            }
+        }
+
+        // 負責聚焦並捲動到指定的關鍵字
+        function focusMatch(index) {
+            // 先把所有搜尋結果的橘色聚焦樣式移除
+            searchMatches.forEach(el => el.classList.remove('active-match'));
+            
+            // 幫現在這一個加上橘色聚焦樣式
+            const target = searchMatches[index];
+            target.classList.add('active-match');
+            
+            // 畫面平滑捲動到這一個字，並置中顯示
+            target.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
 
         function setViewMode(mode) {
