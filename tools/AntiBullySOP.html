@@ -843,7 +843,19 @@
         function handleSearch() {
             const input = document.getElementById('searchInput');
             searchQuery = input.value;
+            
+            // 1. 重新渲染畫面（此時會把有關鍵字的字加上黃色螢光筆標記）
             renderContent();
+
+            // 2. 新增功能：如果有輸入關鍵字，自動跳轉定位
+            if (searchQuery.trim() !== '') {
+                // 尋找畫面上第一個被標記為黃色螢光筆的元素
+                const firstMatch = document.querySelector('.search-highlight');
+                if (firstMatch) {
+                    // 讓右側內容區平滑滾動到該文字的位置，並將其置中顯示
+                    firstMatch.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
         }
 
         function setViewMode(mode) {
