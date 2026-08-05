@@ -459,6 +459,13 @@
             font-weight: 600;
         }
 
+        /* 目前聚焦的搜尋結果 */
+        mark.search-highlight.active-match {
+            background-color: #f97316;
+            color: #ffffff;
+            box-shadow: 0 0 0 2px #c2410c;
+        }
+
         /* Breadcrumb Navigation */
         .breadcrumb {
             display: flex;
@@ -563,7 +570,7 @@
                 <svg viewBox="0 0 24 24">
                     <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
                 </svg>
-                <input type="text" id="searchInput" placeholder="全內容關鍵字搜尋 (例如: 申訴, 3年, 10日)..." oninput="handleSearch()">
+                <input type="text" id="searchInput" placeholder="全內容關鍵字搜尋 (例如: 申訴, 3年, 10日)..." oninput="handleSearch()" onkeydown="handleSearchNav(event)">
             </div>
         </div>
 
